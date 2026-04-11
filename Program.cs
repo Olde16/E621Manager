@@ -1,9 +1,7 @@
 ﻿namespace E621Manager
 {
     using e621lib;
-    using System.Diagnostics;
     using System.Net;
-    using System.Security.Cryptography.X509Certificates;
     using System.Text;
 
     internal class Program
