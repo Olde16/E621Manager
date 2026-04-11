@@ -15,7 +15,7 @@
             // preperations
             if (args.Length == 0)
             {
-                
+                errorHandler(0);
             }
 
             string? user = args[0];
