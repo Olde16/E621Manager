@@ -2,6 +2,7 @@
 {
     using e621lib;
     using System.Net;
+    using System.Reflection.Metadata;
     using System.Text;
 
     internal class Program
@@ -11,7 +12,7 @@
             // preperations
             if (args.Length == 0)
             {
-                throw new Exception("Provide at least a username and API key!");
+                
             }
 
             string? user = args[0];
@@ -52,6 +53,8 @@
 
             // code
 
+
+
             // end
             Console.ReadKey();
         }
@@ -66,6 +69,20 @@
                 }
             }
             return null;
+        }
+        public static void errorHandler(int err)
+        {
+            if (err > 0)
+            {
+                switch (err)
+                {
+                    case 0:
+                        throw new Exception("Provide at least a username and API key!");
+                    default: 
+                        throw new Exception("Unknown Error Exception");
+                }
+            }
+            else throw new Exception("Unknown Error Exception");
         }
     }
 }
