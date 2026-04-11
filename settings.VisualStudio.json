@@ -1,4 +1,5 @@
 /* Visual Studio Settings File */
 {
-  "sourceControl.gitSettings.enableThirdPartyImages": true
+  "sourceControl.gitSettings.enableThirdPartyImages": true,
+  "debugging.general.closeConsoleWhenDebuggingEnds": true
 }
