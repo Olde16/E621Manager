@@ -79,7 +79,7 @@
                     case 0:
                         throw new Exception("Provide at least a username and API key!");
                     default: 
-                        throw new Exception("Unknown Error Exception");
+                        throw new Exception("Unhandled Error Exception");
                 }
             }
             else throw new Exception("Unknown Error Exception");
