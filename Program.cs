@@ -49,7 +49,7 @@
             }
             else reqMsg.Headers.Add("Authorisation", "Basic Missing");
             reqMsg.Headers.Remove("User-Agent");
-            reqMsg.Headers.Add("User-Agent","E621 helper programm -- contact Olde16");
+            reqMsg.Headers.Add("User-Agent","E621 helper programm -- contact " + user + " for using this -- development by Olde16");
 
 
             // code
