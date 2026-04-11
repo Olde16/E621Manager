@@ -8,6 +8,10 @@
 
     internal class Program
     {
+        static HttpClient httpClient = new HttpClient();
+        static HttpRequestMessage requestMessage = new HttpRequestMessage();
+        static UriBuilder uriBuilder = new UriBuilder();
+
         static async Task Main(string[] args)
         {
             // preperations
@@ -30,50 +34,52 @@
             }
             User e621User = new User();
             Page page = new Page();
-            HttpClient httpClient = new HttpClient();
-            UriBuilder uriBuilder = new UriBuilder();
             uriBuilder.Scheme = "https";
             uriBuilder.Host = "e621.net";
             httpClient.BaseAddress = uriBuilder.Uri;
             httpClient.Timeout = new TimeSpan(0, 0, 6);
             httpClient.DefaultVersionPolicy = HttpVersionPolicy.RequestVersionOrHigher;
             httpClient.DefaultRequestVersion = HttpVersion.Version20;
-            HttpRequestMessage reqMsg = new HttpRequestMessage();
-            reqMsg.Headers.Clear();
-            reqMsg.Headers.Concat(httpClient.DefaultRequestHeaders);
-            reqMsg.Headers.Remove("Authorisation");
+            requestMessage.Headers.Clear();
+            requestMessage.Headers.Concat(httpClient.DefaultRequestHeaders);
+            requestMessage.Headers.Remove("Authorisation");
             string? encodedCreds = encodeBase(user + ":" + apiKey);
             if (encodedCreds != null)
             {
-                reqMsg.Headers.Add("Authorisation", "Basic " + encodedCreds);
+                requestMessage.Headers.Add("Authorisation", "Basic " + encodedCreds);
             }
-            else reqMsg.Headers.Add("Authorisation", "Basic Missing");
-            reqMsg.Headers.Remove("User-Agent");
-            reqMsg.Headers.Add("User-Agent","E621 helper programm -- contact " + user + " for using this -- development by Olde16");
-            reqMsg.Version = httpClient.DefaultRequestVersion;
-            reqMsg.VersionPolicy = httpClient.DefaultVersionPolicy;
+            else requestMessage.Headers.Add("Authorisation", "Basic Missing");
+            requestMessage.Headers.Remove("User-Agent");
+            requestMessage.Headers.Add("User-Agent","E621 helper programm -- contact " + user + " for using this -- development by Olde16");
+            requestMessage.Version = httpClient.DefaultRequestVersion;
+            requestMessage.VersionPolicy = httpClient.DefaultVersionPolicy;
 
             // code
 
             //test
-            uriBuilder.Path = "/posts.json";
-            reqMsg.RequestUri = uriBuilder.Uri;
-            reqMsg.Method = HttpMethod.Get;
 
-            HttpResponseMessage respMsg = await httpClient.SendAsync(reqMsg);
+            rebuildUri("/favorites.json", HttpMethod.Delete, ["post_id=6321858"]);
+            HttpResponseMessage respMsg = await httpClient.SendAsync(requestMessage);
             if (respMsg != null)
             {
-                Console.WriteLine(reqMsg.ToString());
+                Console.WriteLine(requestMessage.ToString());
                 Console.WriteLine(HttpStatusCode.OK == respMsg.StatusCode);
                 Console.WriteLine(respMsg.ToString());
             }
-            
-            
 
             // end
             Console.ReadKey();
         }
-
+        public static void rebuildUri(string uri, HttpMethod method, string[]? vals = null)
+        {
+            if (vals != null)
+            {
+                uriBuilder.Query = string.Join('&', vals);
+            }
+            uriBuilder.Path = uri;
+            requestMessage.RequestUri = uriBuilder.Uri;
+            requestMessage.Method = method;
+        }
         public static string? encodeBase(string inp)
         {
             if (inp != null)
