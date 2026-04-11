@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "E621Manager": {
+      "commandName": "Project",
+      "commandLineArgs": "Olde16 zFJKHaCuVacvHmLpQsGG1nSA",
+      "hotReloadEnabled": false
+    }
+  }
+}

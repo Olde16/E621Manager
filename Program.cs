@@ -2,12 +2,13 @@
 {
     using e621lib;
     using System.Net;
+    using System.Net.Http.Headers;
     using System.Reflection.Metadata;
     using System.Text;
 
     internal class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             // preperations
             if (args.Length == 0)
@@ -49,11 +50,25 @@
             else reqMsg.Headers.Add("Authorisation", "Basic Missing");
             reqMsg.Headers.Remove("User-Agent");
             reqMsg.Headers.Add("User-Agent","E621 helper programm -- contact " + user + " for using this -- development by Olde16");
-
+            reqMsg.Version = httpClient.DefaultRequestVersion;
+            reqMsg.VersionPolicy = httpClient.DefaultVersionPolicy;
 
             // code
 
+            //test
+            uriBuilder.Path = "/posts.json";
+            reqMsg.RequestUri = uriBuilder.Uri;
+            reqMsg.Method = HttpMethod.Get;
 
+            HttpResponseMessage respMsg = await httpClient.SendAsync(reqMsg);
+            if (respMsg != null)
+            {
+                Console.WriteLine(reqMsg.ToString());
+                Console.WriteLine(HttpStatusCode.OK == respMsg.StatusCode);
+                Console.WriteLine(respMsg.ToString());
+            }
+            
+            
 
             // end
             Console.ReadKey();
