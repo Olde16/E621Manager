@@ -53,19 +53,46 @@
             requestMessage.VersionPolicy = httpClient.DefaultVersionPolicy;
 
             // code
+            Console.WriteLine("Thanks for using this! What to do now?");
+            Console.WriteLine("All operations use the E621.net API. Therefore it is required that you are connected to the Internet!");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Be aware: All operations are irreversable! Do not use a command of which you are not sure of the consequences!");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("###### --- Standard Operations --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("These options do not do anything to your local machine:");
+            Console.WriteLine("1  - Get something... (number of posts favorited, number of posts on E621, etc.) [Not implemented yet]");
+            Console.WriteLine("2  - Set something... [Not implemeted yet]");
+            Console.WriteLine("3  - Compare something... (you have more of, less of, etc.) [Not implemeted yet]");
+            Console.WriteLine("4  - Statistics overview... (E621 statistics that let your jaw drop) [Not implemented yet]");
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine("###### --- Affecting Operations --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("These might alter your file system depending on what you choose. Use with caution:");
+            Console.WriteLine("68 - Sort something... (for artist, character, etc.) [Not implemented yet]");
+            Console.WriteLine("69 - Download something... (posts, collections, all of something) [Not implemeted yet]");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("###### --- DANGER ZONE --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("These options should be used with caution and thorough consideration:");
+            Console.WriteLine("99 - Delete something... (something that you're the owner of, favorites, upvotes, etc) [Not implemented yet]");
+            Console.WriteLine();
+
+            Console.Write("Select the number of your choice: ");
+            string? input = Console.ReadLine();
 
 
-            //test
 
-            e621_Api(E621_PATHS.FAVORITES, HttpMethod.Get, 0, ["q=dragon"]); // finally got it working
-
-            HttpResponseMessage respMsg = await httpClient.SendAsync(requestMessage);
-            if (respMsg != null)
-            {
-                Console.WriteLine(requestMessage.ToString());
-                Console.WriteLine(HttpStatusCode.OK == respMsg.StatusCode);
-                Console.WriteLine(respMsg.ToString());
-            }
+            //e621_Api(E621_PATHS.FAVORITES, HttpMethod.Get, 0, ["q=dragon"]); // finally got it working
+            //HttpResponseMessage respMsg = await httpClient.SendAsync(requestMessage);
+            //if (respMsg != null)
+            //{
+            //    Console.WriteLine(requestMessage.ToString());
+            //    Console.WriteLine(HttpStatusCode.OK == respMsg.StatusCode);
+            //    Console.WriteLine(respMsg.ToString());
+            //}
 
             // end
             Console.ReadKey();
