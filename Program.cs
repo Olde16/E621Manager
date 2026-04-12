@@ -52,50 +52,64 @@
             requestMessage.Version = httpClient.DefaultRequestVersion;
             requestMessage.VersionPolicy = httpClient.DefaultVersionPolicy;
 
-            // code
-            Console.WriteLine("Thanks for using this! What to do now?");
-            Console.WriteLine("All operations use the E621.net API. Therefore it is required that you are connected to the Internet!");
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("Be aware: All operations are irreversable! Do not use a command of which you are not sure of the consequences!");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine();
-            Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("###### --- Standard Operations --- ######");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("These options do not do anything to your local machine:");
-            Console.WriteLine("1  - Get something... (number of posts favorited, number of posts on E621, etc.) [Not implemented yet]");
-            Console.WriteLine("2  - Set something... [Not implemeted yet]");
-            Console.WriteLine("3  - Compare something... (you have more of, less of, etc.) [Not implemeted yet]");
-            Console.WriteLine("4  - Statistics overview... (E621 statistics that let your jaw drop) [Not implemented yet]");
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine("###### --- Affecting Operations --- ######");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("These might alter your file system depending on what you choose. Use with caution:");
-            Console.WriteLine("68 - Sort something... (for artist, character, etc.) [Not implemented yet]");
-            Console.WriteLine("69 - Download something... (posts, collections, all of something) [Not implemeted yet]");
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("###### --- DANGER ZONE --- ######");
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine("These options should be used with caution and thorough consideration:");
-            Console.WriteLine("99 - Delete something... (something that you're the owner of, favorites, upvotes, etc) [Not implemented yet]");
-            Console.WriteLine();
+            // code Main
+            while (true)
+            {
+                printText_Start();
+                Console.Write("Select the number of your choice: ");
+                string? input = Console.ReadLine();
 
-            Console.Write("Select the number of your choice: ");
-            string? input = Console.ReadLine();
+                if (input != null)
+                {
+                    input = input.Trim();
+                    switch (input)
+                    {
+                        case "1": // get
+                            enter_Context1();
+                            break;
+                        case "2": // set
+                            enter_Context2();
+                            break;
+                        case "3": // compare
+                            enter_Context3();
+                            break;
+                        case "4": // stats
+                            enter_Context4();
+                            break;
+                        case "68": // sort 
+                            enter_Context68();
+                            break;
+                        case "69": // download
+                            enter_Context69();
+                            break;
+                        case "99": // delete
+                            enter_Context99();
+                            break;
+                        default:
+                            Console.WriteLine();
+                            Console.WriteLine("Thats not an option!");
+                            break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine();
+                    Console.WriteLine("Provide a valid number please!");
+                }
 
+                //e621_Api(E621_PATHS.FAVORITES, HttpMethod.Get, 0, ["q=dragon"]); // finally got it working
+                //HttpResponseMessage respMsg = await httpClient.SendAsync(requestMessage);
+                //if (respMsg != null)
+                //{
+                //    Console.WriteLine(requestMessage.ToString());
+                //    Console.WriteLine(HttpStatusCode.OK == respMsg.StatusCode);
+                //    Console.WriteLine(respMsg.ToString());
+                //}
 
-
-            //e621_Api(E621_PATHS.FAVORITES, HttpMethod.Get, 0, ["q=dragon"]); // finally got it working
-            //HttpResponseMessage respMsg = await httpClient.SendAsync(requestMessage);
-            //if (respMsg != null)
-            //{
-            //    Console.WriteLine(requestMessage.ToString());
-            //    Console.WriteLine(HttpStatusCode.OK == respMsg.StatusCode);
-            //    Console.WriteLine(respMsg.ToString());
-            //}
-
-            // end
-            Console.ReadKey();
+                // end
+                Console.ReadKey();
+                Console.Clear();
+            }
         }
 
 
@@ -223,5 +237,91 @@
 
         #endregion
 
+        #region Context
+        public static void printText_Start() // main menu
+        {
+            Console.WriteLine("Thanks for using this! What to do now?");
+            Console.WriteLine("All operations use the E621.net API. Therefore it is required that you are connected to the Internet!");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Be aware: All operations are irreversable! Do not use a command of which you are not sure of the consequences!");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine();
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("###### --- Standard Operations --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("These options do not do anything to your local machine:");
+            Console.WriteLine("1  - Get something... (number of posts favorited, number of posts on E621, etc.) [Not implemented yet]");
+            Console.WriteLine("2  - Set something... [Not implemeted yet]");
+            Console.WriteLine("3  - Compare something... (you have more of, less of, etc.) [Not implemeted yet]");
+            Console.WriteLine("4  - Statistics overview... (E621 statistics that let your jaw drop) [Not implemented yet]");
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine("###### --- Affecting Operations --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("These might alter your file system depending on what you choose. Use with caution:");
+            Console.WriteLine("68 - Sort something... (for artist, character, etc.) [Not implemented yet]");
+            Console.WriteLine("69 - Download something... (posts, collections, all of something) [Not implemeted yet]");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("###### --- DANGER ZONE --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+            Console.WriteLine("These options should be used with caution and thorough consideration:");
+            Console.WriteLine("99 - Delete something... (something that you're the owner of, favorites, upvotes, etc) [Not implemented yet]");
+            Console.WriteLine();
+        }
+
+        public static void enter_Context1() // get
+        {
+            Console.Clear(); // clear for new context
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("###### --- Get --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        public static void enter_Context2() // set
+        {
+            Console.Clear(); // clear for new context
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("###### --- Set --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        public static void enter_Context3() // compare
+        {
+            Console.Clear(); // clear for new context
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("###### --- Compare --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        public static async Task enter_Context4() // stats
+        {
+            Console.Clear(); // clear for new context
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("###### --- E621 Statistics --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+
+            Console.WriteLine();
+            Console.WriteLine("Displaying statistics... (this may take a while)");
+
+            
+        }
+        public static void enter_Context68() // sort
+        {
+            Console.Clear(); // clear for new context
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("###### --- Sort --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        public static void enter_Context69() // download
+        {
+            Console.Clear(); // clear for new context
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("###### --- Download --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        public static void enter_Context99() // delete
+        {
+            Console.Clear(); // clear for new context
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("###### --- DELETE --- ######");
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        #endregion
     }
 }
