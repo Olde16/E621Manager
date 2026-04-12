@@ -72,7 +72,7 @@
         }
 
 
-        #region e621_API_URIs
+        #region e621_API
 
         public static void rebuildUri(string path, HttpMethod method, string[]? vals = null)
         {
@@ -130,7 +130,7 @@
                         rebuildUri("/post_flags.json", httpm, query_strings);
                         break;
                     case E621_PATHS.VOTES:
-                        if (id <= 0) { errorHandler(3); break; } // requires id (why the hell not use Put??)
+                        if (id <= 0) { errorHandler(1); break; } // requires id (why the hell not use Put??)
                         rebuildUri(string.Format("/posts/{0}/votes.json",id), httpm, query_strings);
                         break;
                     default:
