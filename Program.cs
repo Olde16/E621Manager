@@ -1,6 +1,8 @@
 ﻿namespace E621Manager
 {
     using e621lib;
+    using System.IO;
+    using System.IO.Compression;
     using System.Net;
     using System.Text;
 
@@ -10,12 +12,12 @@
         static HttpRequestMessage requestMessage = new HttpRequestMessage();
         static UriBuilder uriBuilder = new UriBuilder();
 
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
             // preperations
             if (args.Length == 0)
             {
-                errorHandler(0);
+                errorHandler(0, null);
             }
 
             string? user = args[0];
@@ -51,6 +53,8 @@
             requestMessage.Headers.Add("User-Agent", "E621 helper programm . Contact " + user + " for using this . development by Olde16");
             requestMessage.Version = httpClient.DefaultRequestVersion;
             requestMessage.VersionPolicy = httpClient.DefaultVersionPolicy;
+
+            // implement authorization test and error handling
 
             // code Main
             while (true)
@@ -129,7 +133,7 @@
         {
             if (httpm == HttpMethod.Put || httpm == HttpMethod.Delete || httpm == HttpMethod.Patch)
             {
-                if (id <= 0) { errorHandler(1); } // requires an id be provided
+                if (id <= 0) { errorHandler(1, null); } // requires an id be provided
                 switch (path)
                 {
                     case E621_PATHS.POST:
@@ -145,7 +149,7 @@
                         rebuildUri(string.Format("/pools/{0}.json", id), httpm, query_strings);
                         break;
                     default:
-                        errorHandler(3);
+                        errorHandler(3, null);
                         break;
                 }
             } else if (httpm == HttpMethod.Post || httpm == HttpMethod.Get)
@@ -171,16 +175,16 @@
                         rebuildUri("/post_flags.json", httpm, query_strings);
                         break;
                     case E621_PATHS.VOTES:
-                        if (id <= 0) { errorHandler(1); break; } // requires id (why the hell not use Put??)
+                        if (id <= 0) { errorHandler(1, null); break; } // requires id (why the hell not use Put??)
                         rebuildUri(string.Format("/posts/{0}/votes.json",id), httpm, query_strings);
                         break;
                     default:
-                        errorHandler(3);
+                        errorHandler(3, null);
                         break;
                 }
             } else // method not supported
             {
-                errorHandler(2);
+                errorHandler(2, null);
             }
         }
         public enum E621_PATHS : uint
@@ -196,7 +200,7 @@
 
         #endregion
 
-        #region Encoding
+        #region Encoding_and_compression
 
         public static string? encodeBase(string inp)
         {
@@ -210,26 +214,44 @@
             return null;
         }
 
+        public static void decompressGZ(FileStream fs,  string fileTo)
+        {
+            FileStream fs_decomp = File.OpenWrite(fileTo);
+
+            GZipStream gZip = new GZipStream(fs, CompressionMode.Decompress);
+            gZip.CopyTo(fs_decomp);
+
+            gZip.Flush();
+            gZip.Dispose();
+            gZip.Close();
+            fs_decomp.Flush();
+            fs_decomp.Dispose();
+            fs_decomp.Close();
+        }
+
         #endregion
 
         #region ErrorHandling
 
-        public static void errorHandler(int err)
+        public static void errorHandler(int err, Exception? inner)
         {
             if (err > 0)
             {
+                if (inner == null) inner = new Exception("NoInner");
                 switch (err)
                 {
                     case 0:
-                        throw new Exception("Provide at least a username and API key!");
+                        throw new Exception("Provide at least a username and API key!", inner);
                     case 1:
-                        throw new Exception("The requested HttpMethod requires an id to be provided!");
+                        throw new Exception("The requested HttpMethod requires an id to be provided!", inner);
                     case 2:
-                        throw new Exception("The requested HttpMethod is not supported!");
+                        throw new Exception("The requested HttpMethod is not supported!", inner);
                     case 3:
-                        throw new Exception("The provided path is invalid!");
+                        throw new Exception("The provided path is invalid!", inner);
+                    case 4:
+                        throw new Exception("The HTTP Request failed with an unexpected status code", inner);
                     default: 
-                        throw new Exception("Unhandled Error Exception");
+                        throw new Exception("Unhandled Error Exception", inner);
                 }
             }
             else throw new Exception("Unknown Error Exception");
@@ -289,7 +311,7 @@
             Console.WriteLine("###### --- Compare --- ######");
             Console.ForegroundColor = ConsoleColor.White;
         }
-        public static async Task enter_Context4() // stats
+        public static void enter_Context4() // stats
         {
             Console.Clear(); // clear for new context
             Console.ForegroundColor = ConsoleColor.Green;
@@ -299,7 +321,33 @@
             Console.WriteLine();
             Console.WriteLine("Displaying statistics... (this may take a while)");
 
-            
+            // get e621 Stats ---
+
+            // requires db dump for fast processing, api limits dont allow plain iteration across all posts
+            // this is using the latest dump and a local temp file
+            uriBuilder.Path = "/db_export";
+            Task<Stream> respStream = httpClient.GetStreamAsync(uriBuilder.Uri);
+            respStream.Wait();
+
+            if (respStream.Result != null)
+            {
+                if (respStream.Result.Length > 0)
+                {
+                    string tempFile = Path.GetTempFileName();
+                    string tempFileDecomp = Path.GetTempFileName();
+                    FileStream fs = File.OpenWrite(tempFile);
+                    respStream.Result.CopyToAsync(fs);
+
+                    decompressGZ(fs, tempFileDecomp);
+
+                    fs.Flush();
+                    fs.Dispose();
+                    fs.Close();
+                } else
+                {
+                    errorHandler(4, new HttpIOException(HttpRequestError.InvalidResponse,"The response has a length of 0 Bytes"));
+                }
+            }
         }
         public static void enter_Context68() // sort
         {
