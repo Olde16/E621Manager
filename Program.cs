@@ -1,6 +1,7 @@
 ﻿namespace E621Manager
 {
     using e621lib;
+    using Microsoft.VisualBasic.FileIO;
     using System.IO;
     using System.IO.Compression;
     using System.Net;
@@ -216,17 +217,16 @@
 
         public static void decompressGZ(FileStream fs,  string fileTo)
         {
-            FileStream fs_decomp = File.OpenWrite(fileTo);
-
+            FileStream decomp = File.Create(fileTo);
             GZipStream gZip = new GZipStream(fs, CompressionMode.Decompress);
-            gZip.CopyTo(fs_decomp);
+            gZip.CopyTo(decomp);
 
             gZip.Flush();
             gZip.Dispose();
             gZip.Close();
-            fs_decomp.Flush();
-            fs_decomp.Dispose();
-            fs_decomp.Close();
+            decomp.Flush();
+            decomp.Dispose();
+            decomp.Close();
         }
 
         #endregion
@@ -320,32 +320,54 @@
 
             Console.WriteLine();
             Console.WriteLine("Displaying statistics... (this may take a while)");
-
-            // get e621 Stats ---
+            Console.WriteLine();
 
             // requires db dump for fast processing, api limits dont allow plain iteration across all posts
             // this is using the latest dump and a local temp file
-            uriBuilder.Path = "/db_export";
+            string currentDB = string.Empty;
+            DateTime currentDateTime = DateTime.Now;
+            currentDB = "posts-" + currentDateTime.ToString("yyyy-MM-dd") + ".csv.gz";
+
+            uriBuilder.Path = "/db_export/" + currentDB;
+            Console.Write("Establishing connection... ");
             Task<Stream> respStream = httpClient.GetStreamAsync(uriBuilder.Uri);
             respStream.Wait();
+            Console.WriteLine("Done!");
 
             if (respStream.Result != null)
             {
-                if (respStream.Result.Length > 0)
+                if (respStream.Result.CanRead)
                 {
-                    string tempFile = Path.GetTempFileName();
-                    string tempFileDecomp = Path.GetTempFileName();
-                    FileStream fs = File.OpenWrite(tempFile);
-                    respStream.Result.CopyToAsync(fs);
-
-                    decompressGZ(fs, tempFileDecomp);
-
+                    
+                    string tempFilePath = Path.Combine(Path.GetTempPath(), "e621.csv.gz");
+                    string tempFileDecompPath = Path.Combine(Path.GetTempPath(), "e621.csv");
+                    Console.Write(string.Format( "Downloading {0} to {1}: ", uriBuilder.Uri.ToString(), tempFilePath) );
+                    FileStream fs = File.OpenWrite(tempFilePath);
+                    long len = fs.Length;
+                    if (len < 0) errorHandler(4, new HttpIOException(HttpRequestError.InvalidResponse, "Content has length of 0 Bytes"));
+                    Console.Write("expect up to " + Math.Ceiling((decimal)len / 1000000000) + " GB... ");
+                    respStream.Result.CopyTo(fs);
+                    respStream.Result.Flush();
+                    respStream.Result.Dispose();
+                    respStream.Result.Close();
                     fs.Flush();
                     fs.Dispose();
+                    Console.WriteLine("Done!");
+                    Console.Write(string.Format( "Decompressing archive {0}... ", tempFilePath) );
+                    fs = File.OpenRead(tempFilePath);
+                    decompressGZ(fs, tempFileDecompPath);
+                    fs.Dispose();
                     fs.Close();
+                    Console.WriteLine("Done!");
+                    Console.WriteLine();
+                    Console.WriteLine("Displaying Statistics:");
+                    FileInfo f = FileSystem.GetFileInfo(tempFileDecompPath);
+                    Console.WriteLine(f.FullName);
+                    Console.WriteLine(f.Length / 1000000 + " MB");
+                    Console.WriteLine("Done!");
                 } else
                 {
-                    errorHandler(4, new HttpIOException(HttpRequestError.InvalidResponse,"The response has a length of 0 Bytes"));
+                    errorHandler(4, new HttpIOException(HttpRequestError.InvalidResponse,"Not able to read stream."));
                 }
             }
         }
