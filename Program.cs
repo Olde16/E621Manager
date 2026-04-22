@@ -1,13 +1,11 @@
 ﻿namespace E621Manager
 {
     using e621lib;
-    using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
     using System.Net;
     using System.Reflection;
     using System.Text;
-    using System.Text.RegularExpressions;
 
     // class magic ( extending class Post by this to make life easier )
     public class Post:e621lib.Post
@@ -370,6 +368,8 @@
 
                     string tempFilePath = Path.Combine(Path.GetTempPath(), "e621.csv.gz");
                     string tempFileDecompPath = Path.Combine(Path.GetTempPath(), "e621.csv");
+
+                    goto decompression; // workaround for test until check in place
                     Console.Write(string.Format( "Downloading {0} to {1}: ", uriBuilder.Uri.ToString(), tempFilePath) );
                     FileStream fs = File.OpenWrite(tempFilePath);
                     long len = fs.Length;
@@ -388,6 +388,7 @@
                     fs.Dispose();
                     fs.Close();
                     Console.WriteLine("Done!");
+                decompression:
                     Console.Write("Reading Post DB... ");
                     posts = readPostsFromCSV(tempFileDecompPath);
                     Console.WriteLine("Done!");
@@ -435,25 +436,44 @@
             StreamReader reader = new StreamReader(csvLocation);
             while (!reader.EndOfStream)
             {
-                string? line = reader.ReadLine();
-                if (line != null)
+                string? read = reader.ReadLine();
+                if (read != null)
                 {
+                    string line = read;
+                    short y = 0;
                     if (i == 0) { descriptors = line.Split(',', StringSplitOptions.None); i++; continue; }
                     if (line.Length == 0) { i++; continue; }
-                    if (line.Contains('"')) //  huston we have a problem (value seperator might be within the following text!)
+                    if (line.Contains('"') && (line.IndexOf('"') != line.LastIndexOf('"')) && (line.IndexOf('"') +1 != line.LastIndexOf('"'))) //  huston we have a problem (value seperator might be within the following text)
                     {
+                        string orig = "";
+                        int firstOccurance = line.IndexOf("\"", StringComparison.Ordinal);
+                        int lastOccurance = line.LastIndexOf("\"", StringComparison.Ordinal);
+                        orig = line.Substring(firstOccurance +1, lastOccurance - (firstOccurance + 1)); // extract original value
+
+                        line.Remove(firstOccurance +1 , lastOccurance - (firstOccurance + 1)); // This doesnt do what it's supposed to????!
+
                         forEachVals = line.Split(',', StringSplitOptions.None);
+                        foreach (string val in forEachVals)
+                        {
+                            if (val.Contains("\"\"")) // insert original value back
+                            {
+                                post[descriptors[y]] = orig;
+                            }
+                            else
+                            {
+                                post[descriptors[y]] = val;
+                            }
+                            y++;
+                        }
                     }
                     else // nothing to worry about
                     {
                         forEachVals = line.Split(',', StringSplitOptions.None);
-                    }
-                    short y = 0;
-                    foreach(string val in forEachVals)
-                    {
-                        post[descriptors[y]] = val;
-                        Debug.WriteLine(string.Format("{0}, {1}, {2}", val, post[descriptors[y]], y));
-                        y++;
+                        foreach (string val in forEachVals)
+                        {
+                            post[descriptors[y]] = val;
+                            y++;
+                        }
                     }
                 }
                 posts.Add(post); 
