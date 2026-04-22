@@ -1,6 +1,7 @@
 ﻿namespace E621Manager
 {
     using e621lib;
+    using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
     using System.Net;
@@ -439,42 +440,9 @@
                 string? read = reader.ReadLine();
                 if (read != null)
                 {
-                    string line = read;
-                    short y = 0;
-                    if (i == 0) { descriptors = line.Split(',', StringSplitOptions.None); i++; continue; }
-                    if (line.Length == 0) { i++; continue; }
-                    if (line.Contains('"') && (line.IndexOf('"') != line.LastIndexOf('"')) && (line.IndexOf('"') +1 != line.LastIndexOf('"'))) //  huston we have a problem (value seperator might be within the following text)
-                    {
-                        string orig = "";
-                        int firstOccurance = line.IndexOf("\"", StringComparison.Ordinal);
-                        int lastOccurance = line.LastIndexOf("\"", StringComparison.Ordinal);
-                        orig = line.Substring(firstOccurance +1, lastOccurance - (firstOccurance + 1)); // extract original value
+                    
+                    // todo: read lines from csv
 
-                        line.Remove(firstOccurance +1 , lastOccurance - (firstOccurance + 1)); // This doesnt do what it's supposed to????!
-
-                        forEachVals = line.Split(',', StringSplitOptions.None);
-                        foreach (string val in forEachVals)
-                        {
-                            if (val.Contains("\"\"")) // insert original value back
-                            {
-                                post[descriptors[y]] = orig;
-                            }
-                            else
-                            {
-                                post[descriptors[y]] = val;
-                            }
-                            y++;
-                        }
-                    }
-                    else // nothing to worry about
-                    {
-                        forEachVals = line.Split(',', StringSplitOptions.None);
-                        foreach (string val in forEachVals)
-                        {
-                            post[descriptors[y]] = val;
-                            y++;
-                        }
-                    }
                 }
                 posts.Add(post); 
                 i++;
