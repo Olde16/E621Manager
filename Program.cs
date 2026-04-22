@@ -1,12 +1,34 @@
 ﻿namespace E621Manager
 {
     using e621lib;
-    using Microsoft.VisualBasic.FileIO;
+    using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
     using System.Net;
+    using System.Reflection;
     using System.Text;
+    using System.Text.RegularExpressions;
 
+    // class magic ( extending class Post by this to make life easier )
+    public class Post:e621lib.Post
+    {
+        public object? this[string name] // set and get values by their string representation
+        {
+            get {
+                Type t = GetType();
+                PropertyInfo? i = t.GetProperty(name);
+                if (i == null) return null;
+                return i.GetValue(this, null);
+            }
+            set
+            {
+                Type t = GetType();
+                PropertyInfo? i = t.GetProperty(name);
+                if ( i == null) return;
+                i.SetValue(this, value, null);
+            }
+        }
+    }
     internal class Program
     {
         static HttpClient httpClient = new HttpClient();
@@ -101,15 +123,6 @@
                     Console.WriteLine();
                     Console.WriteLine("Provide a valid number please!");
                 }
-
-                //e621_Api(E621_PATHS.FAVORITES, HttpMethod.Get, 0, ["q=dragon"]); // finally got it working
-                //HttpResponseMessage respMsg = await httpClient.SendAsync(requestMessage);
-                //if (respMsg != null)
-                //{
-                //    Console.WriteLine(requestMessage.ToString());
-                //    Console.WriteLine(HttpStatusCode.OK == respMsg.StatusCode);
-                //    Console.WriteLine(respMsg.ToString());
-                //}
 
                 // end
                 Console.ReadKey();
@@ -326,19 +339,35 @@
             // this is using the latest dump and a local temp file
             string currentDB = string.Empty;
             DateTime currentDateTime = DateTime.Now;
+        IfDateFailed:
             currentDB = "posts-" + currentDateTime.ToString("yyyy-MM-dd") + ".csv.gz";
-
             uriBuilder.Path = "/db_export/" + currentDB;
+
+            // add check for existing db
+
             Console.Write("Establishing connection... ");
             Task<Stream> respStream = httpClient.GetStreamAsync(uriBuilder.Uri);
             respStream.Wait();
-            Console.WriteLine("Done!");
+            if (respStream.IsCompletedSuccessfully)
+            {
+                Console.WriteLine("Done!");
+            } else
+            {
+                currentDateTime = new DateTime(currentDateTime.Year, currentDateTime.Month, currentDateTime.Day - 1);
+                if (!(currentDateTime.Day < DateTime.Now.Day - 5))
+                {
+                    goto IfDateFailed;
+                }
+                else
+                    errorHandler(4, new ArgumentException("The provided download string returned an error.", new HttpRequestException(HttpRequestError.HttpProtocolError, "Resource not found!")));
+            }
 
             if (respStream.Result != null)
             {
                 if (respStream.Result.CanRead)
                 {
-                    
+                    Post[] posts = [];
+
                     string tempFilePath = Path.Combine(Path.GetTempPath(), "e621.csv.gz");
                     string tempFileDecompPath = Path.Combine(Path.GetTempPath(), "e621.csv");
                     Console.Write(string.Format( "Downloading {0} to {1}: ", uriBuilder.Uri.ToString(), tempFilePath) );
@@ -359,11 +388,12 @@
                     fs.Dispose();
                     fs.Close();
                     Console.WriteLine("Done!");
+                    Console.Write("Reading Post DB... ");
+                    posts = readPostsFromCSV(tempFileDecompPath);
+                    Console.WriteLine("Done!");
                     Console.WriteLine();
-                    Console.WriteLine("Displaying Statistics:");
-                    FileInfo f = FileSystem.GetFileInfo(tempFileDecompPath);
-                    Console.WriteLine(f.FullName);
-                    Console.WriteLine(f.Length / 1000000 + " MB");
+                    Console.WriteLine("Statistics:");
+                    Console.WriteLine(posts.Length);
                     Console.WriteLine("Done!");
                 } else
                 {
@@ -391,6 +421,45 @@
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine("###### --- DELETE --- ######");
             Console.ForegroundColor = ConsoleColor.White;
+        }
+        #endregion
+
+        #region CSV
+        public static Post[] readPostsFromCSV(string csvLocation)
+        {
+            List<Post> posts = new List<Post>();
+            Post post = new Post();
+            string[] descriptors = [];
+            string[] forEachVals = [];
+            uint i = 0;
+            StreamReader reader = new StreamReader(csvLocation);
+            while (!reader.EndOfStream)
+            {
+                string? line = reader.ReadLine();
+                if (line != null)
+                {
+                    if (i == 0) { descriptors = line.Split(',', StringSplitOptions.None); i++; continue; }
+                    if (line.Length == 0) { i++; continue; }
+                    if (line.Contains('"')) //  huston we have a problem (value seperator might be within the following text!)
+                    {
+                        forEachVals = line.Split(',', StringSplitOptions.None);
+                    }
+                    else // nothing to worry about
+                    {
+                        forEachVals = line.Split(',', StringSplitOptions.None);
+                    }
+                    short y = 0;
+                    foreach(string val in forEachVals)
+                    {
+                        post[descriptors[y]] = val;
+                        Debug.WriteLine(string.Format("{0}, {1}, {2}", val, post[descriptors[y]], y));
+                        y++;
+                    }
+                }
+                posts.Add(post); 
+                i++;
+            }
+            return posts.ToArray();
         }
         #endregion
     }
