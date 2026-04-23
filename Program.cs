@@ -435,14 +435,25 @@
             string[] forEachVals = [];
             uint i = 0;
             StreamReader reader = new StreamReader(csvLocation);
+
             while (!reader.EndOfStream)
             {
-                string? read = reader.ReadLine();
-                if (read != null)
+                int k = 0;
+                string? line = reader.ReadLine();
+                if (line != null)
                 {
-                    
-                    // todo: read lines from csv
-
+                    if (i == 0) { // first line contains property names
+                        descriptors = line.Split(',');
+                        i++;
+                        Debug.WriteLine("HEAD: " + line);
+                        continue;
+                    }
+                    if (line.Trim() == string.Empty) // line is empty > do nothing
+                    {
+                        i++;
+                        continue;
+                    }
+                    Debug.WriteLine("LINE: " + line);
                 }
                 posts.Add(post); 
                 i++;
