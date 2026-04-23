@@ -1,12 +1,14 @@
 ﻿namespace E621Manager
 {
     using e621lib;
+    using Microsoft.VisualBasic;
     using System.Diagnostics;
     using System.IO;
     using System.IO.Compression;
     using System.Net;
     using System.Reflection;
     using System.Text;
+    using System.Text.Unicode;
 
     // class magic ( extending class Post by this to make life easier )
     public class Post:e621lib.Post
@@ -338,7 +340,7 @@
             // this is using the latest dump and a local temp file
             string currentDB = string.Empty;
             DateTime currentDateTime = DateTime.Now;
-        IfDateFailed:
+        IfDateFailed: // iterates back when the currentDateTime variable has lead to an error - changes the date to one day before
             currentDB = "posts-" + currentDateTime.ToString("yyyy-MM-dd") + ".csv.gz";
             uriBuilder.Path = "/db_export/" + currentDB;
 
@@ -369,8 +371,9 @@
 
                     string tempFilePath = Path.Combine(Path.GetTempPath(), "e621.csv.gz");
                     string tempFileDecompPath = Path.Combine(Path.GetTempPath(), "e621.csv");
-
+#if DEBUG
                     goto decompression; // workaround for test until check in place
+#endif
                     Console.Write(string.Format( "Downloading {0} to {1}: ", uriBuilder.Uri.ToString(), tempFilePath) );
                     FileStream fs = File.OpenWrite(tempFilePath);
                     long len = fs.Length;
@@ -389,7 +392,9 @@
                     fs.Dispose();
                     fs.Close();
                     Console.WriteLine("Done!");
+#if DEBUG
                 decompression:
+#endif
                     Console.Write("Reading Post DB... ");
                     posts = readPostsFromCSV(tempFileDecompPath);
                     Console.WriteLine("Done!");
@@ -432,31 +437,49 @@
             List<Post> posts = new List<Post>();
             Post post = new Post();
             string[] descriptors = [];
-            string[] forEachVals = [];
-            uint i = 0;
+            List<string> forEachVals = [];
+
             StreamReader reader = new StreamReader(csvLocation);
+
+            string complete = "";
+            uint idx = 0;
+
+            // its kinda working but its annoying with the line breaks in the middle of f nowhere
 
             while (!reader.EndOfStream)
             {
-                int k = 0;
                 string? line = reader.ReadLine();
                 if (line != null)
                 {
-                    if (i == 0) { // first line contains property names
-                        descriptors = line.Split(',');
-                        i++;
-                        Debug.WriteLine("HEAD: " + line);
-                        continue;
-                    }
-                    if (line.Trim() == string.Empty) // line is empty > do nothing
+                    if (idx == 0)
                     {
-                        i++;
+                        descriptors = line.Split(',');
+                        Console.WriteLine(line);
+                    }
+                    if (line.Trim() == string.Empty) {
+                        idx++;
                         continue;
                     }
-                    Debug.WriteLine("LINE: " + line);
+                    Debug.WriteLine(line.Count('"'));
+                    if (!complete.Contains(line))
+                    {
+                        Console.WriteLine(line);
+                    }
+                    else
+                    {
+                        Console.WriteLine(complete);
+                    }
                 }
-                posts.Add(post); 
-                i++;
+                idx++;
+            }
+            
+            foreach (string entry in descriptors)
+            {
+                Debug.WriteLine(entry);
+            }
+            foreach (string entry in forEachVals)
+            {
+                Debug.WriteLine(entry);
             }
             return posts.ToArray();
         }
