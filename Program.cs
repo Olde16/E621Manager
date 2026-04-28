@@ -2,11 +2,14 @@
 {
     using e621lib;
     using Microsoft.VisualBasic;
+    using Microsoft.VisualBasic.FileIO;
     using System.Diagnostics;
+    using System.Globalization;
     using System.IO;
     using System.IO.Compression;
     using System.Net;
     using System.Reflection;
+    using System.Reflection.PortableExecutable;
     using System.Text;
     using System.Text.Unicode;
 
@@ -371,9 +374,7 @@
 
                     string tempFilePath = Path.Combine(Path.GetTempPath(), "e621.csv.gz");
                     string tempFileDecompPath = Path.Combine(Path.GetTempPath(), "e621.csv");
-#if DEBUG
-                    goto decompression; // workaround for test until check in place
-#endif
+
                     Console.Write(string.Format( "Downloading {0} to {1}: ", uriBuilder.Uri.ToString(), tempFilePath) );
                     FileStream fs = File.OpenWrite(tempFilePath);
                     long len = fs.Length;
@@ -392,15 +393,17 @@
                     fs.Dispose();
                     fs.Close();
                     Console.WriteLine("Done!");
-#if DEBUG
-                decompression:
-#endif
+
                     Console.Write("Reading Post DB... ");
                     posts = readPostsFromCSV(tempFileDecompPath);
                     Console.WriteLine("Done!");
                     Console.WriteLine();
                     Console.WriteLine("Statistics:");
                     Console.WriteLine(posts.Length);
+                    foreach (var post in posts)
+                    {
+                        Debug.WriteLine(post.fav_count);
+                    }
                     Console.WriteLine("Done!");
                 } else
                 {
@@ -437,51 +440,84 @@
             List<Post> posts = new List<Post>();
             Post post = new Post();
             string[] descriptors = [];
-            List<string> forEachVals = [];
+            uint i = 0;
 
-            StreamReader reader = new StreamReader(csvLocation);
+            var fs = File.OpenRead(csvLocation);
 
-            string complete = "";
-            uint idx = 0;
-
-            // its kinda working but its annoying with the line breaks in the middle of f nowhere
-
-            while (!reader.EndOfStream)
+            foreach (var row in ReadCsv(fs))
             {
-                string? line = reader.ReadLine();
-                if (line != null)
+                if (i == 0)
                 {
-                    if (idx == 0)
+                    descriptors = row;
+                    i++;
+                    continue;
+                }
+
+
+
+                if (i == 200) break;
+
+                i++;
+            }
+
+            return posts.ToArray();
+        }
+
+        public static IEnumerable<string[]> ReadCsv(Stream stream)
+        {
+            using var reader = new StreamReader(stream);
+
+            var field = new StringBuilder();
+            var row = new List<string>();
+
+            bool inQuotes = false;
+
+            while (true)
+            {
+                int raw = reader.Read();
+                if (raw == -1) break;
+
+                char c = (char)raw;
+
+                if (c == '"')
+                {
+                    if (inQuotes && reader.Peek() == '"')
                     {
-                        descriptors = line.Split(',');
-                        Console.WriteLine(line);
-                    }
-                    if (line.Trim() == string.Empty) {
-                        idx++;
-                        continue;
-                    }
-                    Debug.WriteLine(line.Count('"'));
-                    if (!complete.Contains(line))
-                    {
-                        Console.WriteLine(line);
+                        field.Append('"');
+                        reader.Read();
                     }
                     else
                     {
-                        Console.WriteLine(complete);
+                        inQuotes = !inQuotes;
                     }
                 }
-                idx++;
+                else if (c == ',' && !inQuotes)
+                {
+                    row.Add(field.ToString());
+                    field.Clear();
+                }
+                else if ((c == '\n' || c == '\r') && !inQuotes)
+                {
+                    if (c == '\r' && reader.Peek() == '\n')
+                        reader.Read();
+
+                    row.Add(field.ToString());
+                    field.Clear();
+
+                    yield return row.ToArray();
+                    row.Clear();
+                }
+                else
+                {
+                    field.Append(c);
+                }
             }
-            
-            foreach (string entry in descriptors)
+
+            if (field.Length > 0 || row.Count > 0)
             {
-                Debug.WriteLine(entry);
+                row.Add(field.ToString());
+                yield return row.ToArray();
             }
-            foreach (string entry in forEachVals)
-            {
-                Debug.WriteLine(entry);
-            }
-            return posts.ToArray();
         }
         #endregion
     }
